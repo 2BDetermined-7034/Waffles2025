@@ -11,7 +11,10 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -45,6 +48,7 @@ public class RobotContainer {
     public RobotContainer() {
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
         autoChooser.addOption("2m", new PathPlannerAuto("2m"));
+        autoChooser.addOption("2m Choreo", new PathPlannerAuto("2m Choreo"));
         SmartDashboard.putData("Auto Mode", autoChooser);
 
         configureBindings();
@@ -54,12 +58,12 @@ public class RobotContainer {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed *0.5) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed *0.5) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
+                // Drivetrain will execute this command periodically
+                drivetrain.applyRequest(() ->
+                        drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * 0.5) // Drive forward with negative Y (forward)
+                                .withVelocityY(-joystick.getLeftX() * MaxSpeed * 0.5) // Drive left with negative X (left)
+                                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                )
         );
 
 //        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
@@ -82,5 +86,13 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         /* Run the path selected from the auto chooser */
+        /*try{
+            PathPlannerPath path = PathPlannerPath.fromChoreoTrajectory("2MChoreo");
+            return AutoBuilder.followPath(path);
+        } catch (Exception e) {
+            DriverStation.reportError("error: " + e.getMessage(), e.getStackTrace());
+            return Commands.none();
+        }*/
         return autoChooser.getSelected();
-    }}
+    }
+}
