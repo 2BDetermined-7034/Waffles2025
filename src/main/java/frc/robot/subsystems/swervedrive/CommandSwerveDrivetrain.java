@@ -1,7 +1,8 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.swervedrive;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.ArrayList;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -29,6 +30,8 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.subsystems.swervedrive.vision.Vision;
+import frc.robot.subsystems.swervedrive.vision.VisionPoseMeasurement;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -38,6 +41,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
+    private final Vision vision = new Vision();
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -265,6 +269,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     @Override
     public void periodic() {
+
+        ArrayList<VisionPoseMeasurement> measurementList = vision.getVisionPoseMeasurements();
+        for (VisionPoseMeasurement measurement : measurementList) {
+            this.addVisionMeasurement(
+                    measurement.getRobotPose(), measurement.getTimeStamp(), measurement.getStdDevs());
+        }
         /*
          * Periodically try to apply the operator perspective.
          * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
