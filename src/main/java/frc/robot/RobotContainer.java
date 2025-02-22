@@ -6,27 +6,34 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import com.ctre.phoenix6.Orchestra;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.swervedrive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.swervedrive.vision.VisionPoseMeasurement;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
-
+    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);// 3/4 of a rotation per second max angular velocity
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -49,6 +56,21 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Mode", autoChooser);
 
         configureBindings();
+        playStartUpSound();
+    }
+
+    private void playStartUpSound(){
+        File f = new File(Filesystem.getDeployDirectory(), "CRAZY.chrp");
+        Orchestra m_orchestra = new Orchestra();
+        TalonFX[] motors = new TalonFX[8];
+        for (int i = 0; i < 4; i++) {
+            m_orchestra.addInstrument(drivetrain.getModule(i).getDriveMotor(), i % 2 + i & 1);
+            m_orchestra.addInstrument(drivetrain.getModule(i).getSteerMotor(), i % 2 + i + 1 & 1);
+        }
+        var status = m_orchestra.loadMusic(f.getPath());
+        if (status.isOK()){
+            m_orchestra.play();
+        }
     }
 
     private void configureBindings() {
@@ -80,6 +102,7 @@ public class RobotContainer {
         joystick.options().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
+        new Trigger(DriverStation::isEnabled).onTrue(Commands.runOnce(this::playStartUpSound));
     }
 
     public Command getAutonomousCommand() {
